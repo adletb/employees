@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+          crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+          integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <title>IT invest Group</title>
+    <style type="text/css">
+    #overlay{
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.6);
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+    <div class="container fluid">
+        <div class="row bg-dark">
+            <div class="col-lg-12" >
+                <p class="text-center text-light display04 pt-2" style="font-size:25px;"> Сотрудники </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row mt-3">
+            <div class="col-lg-6">
+                <h3 class="text-info"> Регистарция </h3>
+            </div>
+            <div class="col-lg-6">
+                <button class="btn btn-info float-right" @click="showAddModal=true; getAllCountries();">
+                    <i class="fas fa-user"></i>&nbsp;&nbsp; Добавить сотрудника
+                </button>
+            </div>
+        </div>
+        <hr class="bg-info">
+        <div class="alert alert-danger" v-if="errorMsg">
+            {{ errorMsg }}
+        </div>
+        <div class="alert alert-danger" v-if="successMsg">
+            {{ successMsg }}
+        </div>
+
+        <!-- Display Records -->
+        <div class="row">
+            <div class="col-lg-12">
+                <table class="table table-border table-striped">
+                    <thead>
+                    <tr class="text-center bg-info text-light">
+                        <th>ID</th>
+                        <th>Фамилия</th>
+                        <th>Имя</th>
+                        <th>Отчество</th>
+                        <th>Email</th>
+                        <th>Тел.</th>
+                        <th>Страна</th>
+                        <th>Город</th>
+                        <th>Изменить</th>
+                        <th>Удалить</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="text-center" v-for="user in users">
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.lastName }}</td>
+                        <td>{{ user.firstName }}</td>
+                        <td>{{ user.patronymic }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.phoneNum }}</td>
+                        <td>{{ user.country }}</td>
+                        <td>{{ user.city }}</td>
+                        <td><a href="#" class="text-success"
+                               @click="showEditModal=true; selectUser(user); getAllCountries(); getCities2()">
+                            <i class="fas fa-edit"></i>
+                        </a></td>
+                        <td><a href="#" class="text-danger"
+                               @click="showDeleteModal=true; selectUser(user);">
+                            <i class="fas fa-trash-alt"></i>
+                        </a></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add New User Model -->
+    <div id="overlay" v-if="showAddModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить сотрудника</h5>
+                    <button type="button" class="close" @click="showAddModal=false; cleanForm();">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div> 
+                <div class="modal-body p-4">
+                    <form action="#" method="post"  @submit="showAddModal=false; addUser(newUser); clearMsg(); return false">
+                        <div class="form-group">
+                            <input type="text" name="name" 
+                                   class="form-control form-control-md" 
+                                   placeholder="Фамилия" v-model="newUser.lastName" required>
+                        </div>
+                        <div class="form-group"> 
+                            <input type="text" name="name" 
+                                   class="form-control form-control-md" 
+                                   placeholder="Имя" v-model="newUser.firstName" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" name="name"
+                                   class="form-control form-control-md" 
+                                   placeholder="Отчество" v-model="newUser.patronymic">
+                        </div>
+                        <div class="form-group">
+                            <input type="email" name="email"
+                                   class="form-control form-control-md" 
+                                   placeholder="E-Mail" v-model="newUser.email">
+                        </div>
+                        <div class="form-group">
+                            <input type="tel" name="phone" 
+                                   class="form-control form-control-md" 
+                                   placeholder="Тел." v-model="newUser.phoneNum"
+                                   pattern="[0-9]{3} [0-9]{3} [0-9]{4}"required>
+                                   <small>Формат: 777 455 6578</small>
+                        </div>
+                       
+                        <div class="form-group"> 
+                            <select v-model="newUser.country" @change="getCities()"                                    
+                                 class="form-control form-control-md"
+                                 id="country" required>
+                                <option disabled value="">Выберите страну</option>
+                                <option v-for="country in countries" 
+                                    v-bind:value="country.name">{{country.name}}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <select v-model="newUser.city" 
+                                    class="form-control form-control-md" id="city">
+                                <option disabled value="">Выберите город</option>
+                                <option v-for="city in cities" 
+                                    v-bind:value="city.name">{{city.name}}
+                                </option>
+                            </select>
+                        </div>                       
+                        
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-info btn-block bt-lh"> 
+                                Добавить сотрудника
+                            </button>
+                        </div> 
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Model -->
+    <div id="overlay" v-if="showEditModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Изменить данные</h5>
+                    <button type="button" class="close" @click="showEditModal=false">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4">        
+                    <form action="#" method="post" @submit="showEditModal=false; updateUser(); clearMsg(); return false">
+                        <div class="form-group">
+                            <input type="text" name="name"
+                                   placeholder="Фамилия"
+                                   class="form-control form-control-md" 
+                                   v-model="currentUser.lastName" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" name="name"
+                                   placeholder="Имя"
+                                   class="form-control form-control-md" 
+                                   v-model="currentUser.firstName" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" name="name"
+                                   placeholder="Отчество" 
+                                   class="form-control form-control-md" 
+                                   v-model="currentUser.patronymic">
+                        </div>
+                        <div class="form-group">
+                            <input type="email" name="email"
+                                   placeholder="email"
+                                   class="form-control form-control-md" 
+                                   v-model="currentUser.email">
+                        </div>
+                        <div class="form-group">
+                            <input type="tel" name="phone"
+                                   class="form-control form-control-md" 
+                                   v-model="currentUser.phoneNum"
+                                   pattern="[0-9]{3} [0-9]{3} [0-9]{4}" required>
+                                   <small> Формат: 777 455 6578</small>
+                        </div>
+                       
+                        <div class="form-group">                             
+                            <select v-model="currentUser.country" 
+                                      @change="getCities2()"                                    
+                                    class="form-control form-control-md" id="country" required>
+                                    <option disabled value="">Выберите страну</option>
+                                    <option v-for="country in countries" 
+                                    v-bind:value="country.name">{{country.name}}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <select v-model="currentUser.city" 
+                                    class="form-control form-control-md" id="city">
+                                    <option disabled value="">Выберите город</option>    
+                                    <option v-for="city in cities" 
+                                    v-bind:value="city.name">{{city.name}}
+                                </option>
+                            </select>
+                        </div>
+
+
+                        <div class="form-group">
+                            <button class="btn btn-info btn-block bt-lh"
+                                    type="submit" >Изменить данные
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Delete Model -->
+    <div id="overlay" v-if="showDeleteModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Удаление сотрудника</h5>
+                    <button type="button" class="close" @click="showDeleteModal=false">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4">
+                    <h4>Вы уверены что хотите удалить этого сотрудника?</h4>
+                    <h5>Имя сотрудника {{ currentUser.firstName }}</h5>
+                    <hr>
+                    <button class="btn btn-danger btn-md"
+                            @click="showDeleteModal=false; deleteUser(); clearMsg();">Да</button>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <button class="btn btn-success btn-md" @click="showDeleteModal=false">Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<script src="./js/main.js"></script>
+</body>
+</html>
